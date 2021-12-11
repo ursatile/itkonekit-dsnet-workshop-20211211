@@ -18,7 +18,7 @@ namespace Autobarn.Website.Controllers.api {
                 links.Add("prev", new { href = $"{baseUrl}?index={Math.Max(0, index - count)}&count={count}" });
             }
             links.Add("first", new { href = $"{baseUrl}?index=0&count={count}" });
-            links.Add("final", new { href = $"{baseUrl}?index={total - count}&count={count}" });
+            links.Add("final", new { href = $"{baseUrl}?index={total - (total % count)}&count={count}" });
             return links;
         }
     }
