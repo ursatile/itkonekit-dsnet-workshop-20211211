@@ -51,7 +51,19 @@ namespace Autobarn.Website.Controllers.api {
         // POST api/vehicles
         [HttpPost]
         public IActionResult Post([FromBody] VehicleDto dto) {
+
+            // Example of how you would respond with multiple validation errors
+            // var errors = new string[] {
+            //     $"Sorry, vehicle {dto.Registration} already exists in our database and you're not allowed to sell the same car twice.",
+            //     $"Sorry, we don't know what kind of car '{dto.ModelCode}' is!"
+            // };
+            // return BadRequest(errors);
+
+            var existing = db.FindVehicle(dto.Registration);
+            if (existing != default) return Conflict($"Sorry, vehicle {dto.Registration} already exists in our database and you're not allowed to sell the same car twice.");
             var vehicleModel = db.FindModel(dto.ModelCode);
+            if (vehicleModel == default) return BadRequest($"Sorry, we don't know what kind of car '{dto.ModelCode}' is!");
+
             var vehicle = new Vehicle {
                 Registration = dto.Registration,
                 Color = dto.Color,
@@ -59,7 +71,7 @@ namespace Autobarn.Website.Controllers.api {
                 VehicleModel = vehicleModel
             };
             db.CreateVehicle(vehicle);
-            return Ok(dto);
+            return Created($"/api/vehicles/{vehicle.Registration}", dto);
         }
 
         // PUT api/vehicles/ABC123

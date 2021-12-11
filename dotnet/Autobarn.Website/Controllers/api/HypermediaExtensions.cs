@@ -8,6 +8,27 @@ using Autobarn.Data.Entities;
 namespace Autobarn.Website.Controllers.api {
     public static class Hal {
 
+        public static dynamic ToHypermediaResource(this Model model, string expand = "") {
+            var result = model.ToDynamic();
+            result._links = new {
+                self = new {
+                    href = $"/api/models/{model.Code}"
+                },
+                info = new {
+                    href = model.ManufacturerWebsiteUrl
+                }
+            };
+            result._actions = new {
+                create = new {
+                    href = $"/api/models/{model.Code}",
+                    method = "POST",
+                    type = "application/json",
+                    name = $"Create a new {model.Manufacturer.Name} {model.Name}"
+                }
+            };
+            return result;
+        }
+
         public static dynamic ToHypermediaResource(this Vehicle vehicle, string expand = "") {
             var result = vehicle.ToDynamic();
             result._links = new {
