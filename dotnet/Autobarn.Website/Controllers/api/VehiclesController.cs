@@ -1,10 +1,13 @@
-﻿using Autobarn.Data;
+﻿using System;
+using Autobarn.Data;
 using Autobarn.Data.Entities;
 using Autobarn.Website.Models;
 using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
 using System.Dynamic;
 using System.Linq;
+using Autobarn.Messages;
+using EasyNetQ;
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
@@ -13,17 +16,19 @@ namespace Autobarn.Website.Controllers.api {
     [ApiController]
     public class VehiclesController : ControllerBase {
         private readonly IAutobarnDatabase db;
+        private readonly IBus bus;
 
-        public VehiclesController(IAutobarnDatabase db) {
+        public VehiclesController(IAutobarnDatabase db, IBus bus) {
             this.db = db;
+            this.bus = bus;
         }
 
-        const int page_size = 10;
+        const int PAGE_SIZE = 10;
 
         // GET: api/vehicles
         [HttpGet]
         [Produces("application/hal+json")]
-        public IActionResult Get(int index = 0, int count = page_size, string expand = "") {
+        public IActionResult Get(int index = 0, int count = PAGE_SIZE, string expand = "") {
             var items = db.ListVehicles().Skip(index).Take(count)
                 .Select(vehicle => vehicle.ToHypermediaResource(expand));
 
@@ -71,7 +76,20 @@ namespace Autobarn.Website.Controllers.api {
                 VehicleModel = vehicleModel
             };
             db.CreateVehicle(vehicle);
+            PublishNewVehicleMessage(vehicle);
             return Created($"/api/vehicles/{vehicle.Registration}", dto);
+        }
+
+        private void PublishNewVehicleMessage(Vehicle vehicle) {
+            var newVehicleMessage = new NewVehicleMessage() {
+                Registration = vehicle.Registration,
+                Color = vehicle.Color,
+                Year = vehicle.Year,
+                Manufacturer = vehicle?.VehicleModel?.Manufacturer.Name,
+                ModelName = vehicle?.VehicleModel?.Name,
+                ListedAt = DateTimeOffset.UtcNow
+            };
+            bus.PubSub.Publish(newVehicleMessage);
         }
 
         // PUT api/vehicles/ABC123
