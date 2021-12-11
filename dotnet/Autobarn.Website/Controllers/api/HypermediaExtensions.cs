@@ -1,8 +1,40 @@
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
+using System.Dynamic;
+using System.Linq;
+using Autobarn.Data.Entities;
 
 namespace Autobarn.Website.Controllers.api {
     public static class Hal {
+
+        public static dynamic ToHypermediaResource(this Vehicle vehicle, string expand = "") {
+            var result = vehicle.ToDynamic();
+            result._links = new {
+                self = new {
+                    href = $"/api/vehicles/{vehicle.Registration}"
+                },
+                model = new {
+                    href = $"/api/models/{vehicle.ModelCode}"
+                }
+            };
+            if (expand == "model") result._embedded = new { model = vehicle.VehicleModel };
+            return result;
+        }
+
+        public static dynamic ToDynamic(this object obj) {
+            IDictionary<string, object> expando = new ExpandoObject();
+            var properties = TypeDescriptor.GetProperties(obj.GetType());
+            foreach (PropertyDescriptor prop in properties) {
+                if (Ignore(prop)) continue;
+                expando.Add(prop.Name, prop.GetValue(obj));
+            }
+            return expando;
+        }
+
+        private static bool Ignore(PropertyDescriptor prop) {
+            return prop.Attributes.OfType<Newtonsoft.Json.JsonIgnoreAttribute>().Any();
+        }
         public static Dictionary<string, object> Paginate(
             string baseUrl,
             int index,
