@@ -21,7 +21,7 @@ namespace Autobarn.PricingServer.Services {
         }
 
         public (int, string) CalculatePrice(PriceRequest priceRequest) {
-            if (priceRequest.ManufacturerName == "DMC") return (100000, "USD");
+            if (priceRequest.ManufacturerName == "dmc") return (100000, "USD");
             return priceRequest.Color.Equals("orange", StringComparison.InvariantCultureIgnoreCase) ? (500, "GBP") : (2000, "EUR");
         }
     }
