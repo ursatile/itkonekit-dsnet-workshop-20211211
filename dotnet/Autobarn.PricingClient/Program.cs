@@ -33,8 +33,8 @@ namespace Autobarn.PricingClient {
                 Year = arg.Year
             };
             var price = await grpcClient.GetPriceAsync(request);
-            Console.WriteLine(
-                $"Got a price: {arg.Manufacturer} {arg.ModelName} ({arg.Color}, {arg.Year}) : {price.Price} {price.CurrencyCode}");
+            Console.WriteLine($"Got a price: {arg.Manufacturer} {arg.ModelName} ({arg.Color}, {arg.Year}) : {price.Price} {price.CurrencyCode}");
+            await bus.PubSub.PublishAsync<NewVehiclePriceMessage>(arg.WithPrice(price.Price, price.CurrencyCode));
         }
 
         private static IConfigurationRoot ReadConfiguration() {
